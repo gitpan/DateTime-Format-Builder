@@ -1,18 +1,18 @@
 --- #YAML:1.0
 name: DateTime-Format-Builder
-version: 0.7801
+version: 0.7802
+author:
+  - ~
+abstract: ~
 license: perl
-distribution_type: module
 requires:
   DateTime: 0.12
+  DateTime::Format::Strptime: 1.04
   Params::Validate: 0.72
-recommends: {}
-build_requires: {}
-conflicts: {}
 provides:
   DateTime::Format::Builder:
     file: lib/DateTime/Format/Builder.pm
-    version: 0.7801
+    version: 0.7802
   DateTime::Format::Builder::Parser:
     file: lib/DateTime/Format/Builder/Parser.pm
     version: 0.77
@@ -31,4 +31,4 @@ provides:
   DateTime::Format::Builder::Parser::generic:
     file: lib/DateTime/Format/Builder/Parser/generic.pm
     version: 0.77
-generated_by: Module::Build version 0.21
+generated_by: Module::Build version 0.23

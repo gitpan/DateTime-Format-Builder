@@ -1,4 +1,4 @@
-# $Id: basic.t,v 1.4 2003/08/10 13:38:29 koschei Exp $
+# $Id: basic.t,v 1.5 2004/01/26 18:46:46 autarch Exp $
 use lib 'inc';
 use blib;
 use strict;

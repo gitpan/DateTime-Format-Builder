@@ -1,5 +1,5 @@
 package DateTime::Format::Builder;
-# $Id: Builder.pm,v 1.34 2003/12/01 09:48:38 koschei Exp $
+# $Id: Builder.pm,v 1.37 2004/02/13 17:37:21 autarch Exp $
 
 =begin comments
 
@@ -17,7 +17,7 @@ use Params::Validate qw(
 use vars qw( $VERSION %dispatch_data );
 
 my $parser = 'DateTime::Format::Builder::Parser';
-$VERSION = '0.7801';
+$VERSION = '0.7802';
 
 # Developer oriented methods
 
@@ -200,6 +200,14 @@ this if you like.
 sub on_fail
 {
     my ($class, $input) = @_;
+
+    my $pkg;
+    my $i = 0;
+    while (($pkg) = caller($i++)) {
+        last if (!UNIVERSAL::isa($pkg, 'DateTime::Format::Builder') &&
+            !UNIVERSAL::isa($pkg, 'DateTime::Format::Builder::Parser'));
+    }
+    local $Carp::CarpLevel = $i;
     croak "Invalid date format: $input";
 }
 
