@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
+# $Id: strptime.t,v 1.4 2003/06/24 07:16:28 koschei Exp $
 use lib 'inc';
+use blib;
 use Test::More tests => 25;
 use strict;
 use vars qw( $class );

@@ -1,5 +1,7 @@
+# $Id: create.t,v 1.4 2003/06/24 07:16:28 koschei Exp $
 use strict;
 use lib 'inc';
+use blib;
 use Test::More tests => 41;
 use vars qw( $class );
 

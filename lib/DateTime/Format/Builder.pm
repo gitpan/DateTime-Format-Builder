@@ -1,5 +1,5 @@
 package DateTime::Format::Builder;
-# $Id: Builder.pm,v 1.21 2003/05/27 23:27:27 koschei Exp $
+# $Id: Builder.pm,v 1.23 2003/06/24 07:20:56 koschei Exp $
 
 =begin comments
 
@@ -10,14 +10,14 @@ Note: there is no API documentation in this file. You want F<Builder.pod> instea
 use strict;
 use 5.005;
 use Carp;
-use DateTime 0.07;
+use DateTime 0.12;
 use Params::Validate qw(
     validate SCALAR ARRAYREF HASHREF SCALARREF CODEREF GLOB GLOBREF UNDEF
 );
 use vars qw( $VERSION );
 
 my $parser = 'DateTime::Format::Builder::Parser';
-$VERSION = '0.72';
+$VERSION = '0.73';
 
 # Developer oriented methods
 

@@ -6,7 +6,7 @@ use Params::Validate qw(
     validate SCALAR CODEREF UNDEF
 );
 
-$VERSION = '0.23';
+$VERSION = '0.24';
 
 =head1 NAME
 
@@ -78,6 +78,7 @@ sub generic_parser {
     return sub
     {
 	my ($self, $date, $p, @args) = @_;
+	return unless defined $date;
 	my %p;
 	%p = %$p if $p; # Look! A Copy!
 

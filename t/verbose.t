@@ -1,5 +1,6 @@
-# $Id: verbose.t,v 1.2 2003/05/23 07:39:45 koschei Exp $
+# $Id: verbose.t,v 1.3 2003/06/24 07:16:28 koschei Exp $
 use lib 'inc';
+use blib;
 use strict;
 use Test::More tests => 5;
 use vars qw( $class );
