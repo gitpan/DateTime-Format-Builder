@@ -1,5 +1,5 @@
 package DateTime::Format::Builder;
-# $Id: Builder.pm,v 1.29 2003/06/29 08:35:19 koschei Exp $
+# $Id: Builder.pm,v 1.31 2003/08/10 13:50:23 koschei Exp $
 
 =begin comments
 
@@ -17,7 +17,7 @@ use Params::Validate qw(
 use vars qw( $VERSION %dispatch_data );
 
 my $parser = 'DateTime::Format::Builder::Parser';
-$VERSION = '0.75';
+$VERSION = '0.76';
 
 # Developer oriented methods
 
@@ -147,6 +147,7 @@ by C<parser()> and C<create_class()>.
 sub create_parser
 {
     my $class = shift;
+    my @common = ( maker => $class );
     if (@_ == 1)
     {
 	my $parsers = shift;
@@ -154,11 +155,11 @@ sub create_parser
 	    (ref $parsers eq 'HASH' ) ? %$parsers :
 	    ( ( ref $parsers eq 'ARRAY' ) ? @$parsers : $parsers)
 	);
-	$parser->create_parser( @parsers );
+	$parser->create_parser( \@common, @parsers );
     }
     else
     {
-	$parser->create_parser( @_ );
+	$parser->create_parser( \@common, @_ );
     }
 }
 
@@ -187,9 +188,7 @@ sub create_method
     my ($class, $parser) = @_;
     return sub {
 	my $self = shift;
-	my $r = $self->$parser(@_);
-	$class->on_fail( $_[0] ) unless defined $r;
-	$r;
+	$parser->parse( $self, @_);
     }
 }
 

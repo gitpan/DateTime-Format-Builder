@@ -1,8 +1,8 @@
-# $Id: altcon.t,v 1.1 2003/06/27 14:44:12 koschei Exp $
+# $Id: altcon.t,v 1.3 2003/08/10 13:38:29 koschei Exp $
 use strict;
 use lib 'inc';
 use blib;
-use Test::More tests => 18;
+use Test::More tests => 20;
 use vars qw( $class );
 
 BEGIN {
@@ -15,7 +15,7 @@ BEGIN {
 sub do_check
 {
     my ($parser, $date, $values) = @_;
-    my $parsed = $class->$parser( $date );
+    my $parsed = $parser->parse( $class, $date );
     isa_ok( $parsed => 'DateTime' );
     is( $parsed->year()  => $values->[0], "Year is right" );
     is( $parsed->month() => $values->[1], "Month is right" );
@@ -55,6 +55,24 @@ sub do_check
     }
 }
 
-
+{
+    my $parser = $class->create_parser(
+	{
+	    regex => qr/^ (\d+) $/x,
+	    params => [qw( epoch ) ],
+	    constructor => [ 'DateTime', 'from_epoch' ]
+	}
+    );
+    my %epochs = (
+	1057279398 => '2003-07-04T00:43:18',
+    );
+    for my $epoch (sort keys %epochs)
+    {
+	my $check = $epochs{$epoch};
+	my $dt = $parser->parse( $class, $epoch );
+	isa_ok( $dt => 'DateTime' );
+	is( $dt->datetime => $check, "Epoch of $epoch to $check" );
+    }
+}
 
 pass 'All done';

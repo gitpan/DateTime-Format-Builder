@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: strptime.t,v 1.4 2003/06/24 07:16:28 koschei Exp $
+# $Id: strptime.t,v 1.5 2003/08/10 13:38:29 koschei Exp $
 use lib 'inc';
 use blib;
 use Test::More tests => 25;
@@ -38,7 +38,7 @@ for my $test (@tests)
 {
     my ($pattern, $data) = @$test;
     my $parser = $class->create_parser( strptime => $pattern );
-    my $parsed = $parser->( $class, $data );
+    my $parsed = $parser->parse( $class, $data );
     isa_ok( $parsed => 'DateTime' );
     is( $parsed->strftime($pattern) => $data, $pattern);
 }

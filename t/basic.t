@@ -1,10 +1,14 @@
-# $Id: basic.t,v 1.3 2003/06/24 07:16:28 koschei Exp $
+# $Id: basic.t,v 1.4 2003/08/10 13:38:29 koschei Exp $
 use lib 'inc';
 use blib;
 use strict;
 use Module::Versions::Report qw();
 use Test::More tests => 5;
-END { diag '', Module::Versions::Report::report() }
+use Sys::Hostname;
+END {
+    my $host = hostname();
+    diag '', Module::Versions::Report::report() if $host !~ /\.anu\.edu\.au/;
+}
 
 BEGIN {
     use_ok 'DateTime::Format::Builder';

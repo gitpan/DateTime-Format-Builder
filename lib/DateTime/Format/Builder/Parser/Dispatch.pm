@@ -72,7 +72,7 @@ potentially end up with an infinitely recursive parser.
 
 =cut
 
-$VERSION = '0.75';
+$VERSION = '0.76';
 
 {
     no strict 'refs';
@@ -104,7 +104,7 @@ sub create_parser
 	{
 	    my $parser = $dispatch_data{$class}{$group};
 	    die "Unknown parsing group: $class\n" unless defined $parser;
-	    my $rv = $parser->( $self, $date, $p, @args );
+	    my $rv = $parser->parse( $self, $date, $p, @args );
 	    return $rv if defined $rv;
 	}
 	return;
