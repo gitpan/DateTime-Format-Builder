@@ -1,6 +1,16 @@
 # Change log for DateTime::Format::Builder
 
 ---
+version: 0.62
+date:    20 Apr 2003
+changes:
+    - Fixed erroneous call to on_fail()
+    - Added 'verbose' debugging capability.
+    - Added 'constructor' option to create_class/import.
+    - Avoid overwriting developers' own new() functions.
+    - Complain if asked to overwrite methods.
+
+---
 version: 0.60
 date:    12 Apr 2003
 changes:
