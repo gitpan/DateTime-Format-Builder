@@ -1,5 +1,5 @@
 package DateTime::Format::Builder;
-# $Id: Builder.pm,v 1.1 2003/03/25 04:25:40 koschei Exp $
+# $Id: Builder.pm,v 1.4 2003/03/30 08:03:32 koschei Exp $
 
 use strict;
 use 5.005;
@@ -8,7 +8,7 @@ use DateTime 0.07;
 use Params::Validate qw( validate SCALAR ARRAYREF HASHREF SCALARREF CODEREF );
 use vars qw( $VERSION );
 
-$VERSION = '0.24';
+$VERSION = '0.25';
 
 sub new
 {
@@ -52,12 +52,12 @@ sub create_class
 {
     my $class = shift;
     my %args = validate( @_, {
-	class	=> { type => SCALAR, optional => 1 },
+	class	=> { type => SCALAR, default => (caller)[0] },
 	version => { type => SCALAR, optional => 1 },
 	parsers	=> { type => HASHREF },
     });
 
-    my $target = $args{class} || (caller)[0];
+    my $target = $args{class};
 
     # Create own lovely new package
     {
@@ -247,7 +247,7 @@ sub create_single_parser
 	    input => $date,
 	);
 
-	return DateTime->new( %p, %{ $args{default} } );
+	return DateTime->new( %p, %{ $args{extra} } );
     };
 }
 

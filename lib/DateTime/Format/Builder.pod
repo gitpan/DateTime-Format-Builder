@@ -146,7 +146,6 @@ Creates a function to parse datetime strings and return L<DateTime> objects.
         {
             params => [ qw( year month day ) ],
             regex  => qr/^(\d\d\d\d)(\d\d)(\d\d)$/,
-            extra   => { hour => 0, minute => 0, second => 0 },
         }
     );
 
@@ -200,11 +199,9 @@ This argument is required.
 
 =item *
 
-C<extra> is a hashref that lists what any left over arguments should be set to.
-For example, an 8 character ICal string consists of just year, month and day.
-Thus one should set the hour, minute and second to 0. One could, equally, set
-them to noon. You can also specify any other parameters to C<< DateTime->new() >>
-here, such as C<time_zone>.
+C<extra> is a hashref that lists what any extra arguments should be set to.
+You can use it to specify  parameters to C<< DateTime->new() >>,
+such as C<time_zone>.
 
 =item *
 
@@ -213,11 +210,11 @@ be called in the event of a parse failing. It will be passed a hash looking like
 
 =over 4
 
-=item +
+=item *
 
 C<input>, being the input on which the parser failed
 
-=item +
+=item *
 
 C<label>, being the label of the parser, if there is one
 
@@ -374,10 +371,6 @@ it under the same terms as Perl itself.
 
 The full text of the licenses can be found in the F<Artistic> and
 F<COPYING> files included with this module.
-
-=head1 ABSTRACT
-
-Easy creation of simple DateTime parsers and formatters.
 
 =head1 AUTHOR
 
