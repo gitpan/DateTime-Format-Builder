@@ -91,6 +91,10 @@ parser that can use this parameter does.
 You may happily specify the same length twice. The parsers
 will be tried in order of specification.
 
+You can also specify multiple lengths by giving it an
+arrayref of numbers rather than just a single scalar.
+If doing so, please keep the number of lengths to a minimum.
+
 If any specifications without I<length>s are given and the
 particular I<length> parser fails, then the non-I<length>
 parsers are tried.
@@ -614,7 +618,9 @@ writing L<DateTime::Format::ICal> and
 L<DateTime::Format::MySQL>, and some much needed review.
 
 Joshua Hoblitt (JHOBLITT) for the concept, some of the API,
-impetus for writing the multilength code,
+impetus for writing the multilength code (both one length with
+multiple parsers and single parser with multiple lengths),
+blame for the Regex custom constructor code,
 and more much needed review.
 
 Kellan Elliott-McCrea (KELLAN) for even more review,

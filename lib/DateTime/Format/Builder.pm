@@ -1,5 +1,5 @@
 package DateTime::Format::Builder;
-# $Id: Builder.pm,v 1.23 2003/06/24 07:20:56 koschei Exp $
+# $Id: Builder.pm,v 1.28 2003/06/27 14:43:47 koschei Exp $
 
 =begin comments
 
@@ -14,10 +14,10 @@ use DateTime 0.12;
 use Params::Validate qw(
     validate SCALAR ARRAYREF HASHREF SCALARREF CODEREF GLOB GLOBREF UNDEF
 );
-use vars qw( $VERSION );
+use vars qw( $VERSION %dispatch_data );
 
 my $parser = 'DateTime::Format::Builder::Parser';
-$VERSION = '0.73';
+$VERSION = '0.74';
 
 # Developer oriented methods
 
@@ -63,6 +63,7 @@ sub create_class
 	version => { type => SCALAR, optional => 1 },
 	verbose	=> { type => SCALAR|GLOBREF|GLOB, optional => 1 },
 	parsers	=> { type => HASHREF },
+	groups  => { type => HASHREF, optional => 1 },
 	constructor => { type => UNDEF|SCALAR|CODEREF, optional => 1 },
     });
 
@@ -80,6 +81,21 @@ sub create_class
 	$class->create_constructor(
 	    $target, exists $args{constructor}, $args{constructor} );
 
+	# Turn groups of parser specs in to groups of parsers
+	{
+	    my $specs = $args{groups};
+	    my %groups;
+
+	    for my $label ( keys %$specs )
+	    {
+		my $parsers = $specs->{$label};
+		my $code = $class->create_parser( $parsers );
+		$groups{$label} = $code;
+	    }
+
+	    $dispatch_data{$target} = \%groups;
+	}
+
 	# Write all our parser methods, creating parsers as we go.
 	while (my ($method, $parsers) = each %{ $args{parsers} })
 	{
@@ -87,10 +103,7 @@ sub create_class
 	    # array ref. Coderefs? Straight through.
 	    my $globname = $target."::$method";
 	    croak "Will not override a preexisting new()" if defined &$globname;
-	    *$globname = $class->create_parser(
-		(ref $parsers eq 'HASH' ) ? %$parsers :
-		( ( ref $parsers eq 'ARRAY' ) ? @$parsers : $parsers )
-	    );
+	    *$globname = $class->create_end_parser( $parsers );
 	}
     }
 
@@ -125,16 +138,41 @@ sub create_constructor
 
 =pod
 
-This creates the method coderefs. Coderefs die on bad parses, return
-C<DateTime> objects on good parse. Used by C<parser()> and
-C<create_class()>.
+This creates the parser coderefs. Coderefs return undef on
+bad parses, return C<DateTime> objects on good parse. Used
+by C<parser()> and C<create_class()>.
 
 =cut
 
 sub create_parser
 {
     my $class = shift;
-    $class->create_method( $parser->create_parser( @_ ) );
+    if (@_ == 1)
+    {
+	my $parsers = shift;
+	my @parsers = (
+	    (ref $parsers eq 'HASH' ) ? %$parsers :
+	    ( ( ref $parsers eq 'ARRAY' ) ? @$parsers : $parsers)
+	);
+	$parser->create_parser( @parsers );
+    }
+    else
+    {
+	$parser->create_parser( @_ );
+    }
+}
+
+=pod
+
+This creates the end methods. Coderefs die on bad parses,
+return C<DateTime> objects on good parse.
+
+=cut
+
+sub create_end_parser
+{
+    my ($class, $parsers) = @_;
+    $class->create_method( $class->create_parser( $parsers ) );
 }
 
 =pod
@@ -149,7 +187,9 @@ sub create_method
     my ($class, $parser) = @_;
     return sub {
 	my $self = shift;
-	$self->$parser(@_) || $class->on_fail( $_[0] );
+	my $r = $self->$parser(@_);
+	$class->on_fail( $_[0] ) unless defined $r;
+	$r;
     }
 }
 
@@ -196,7 +236,7 @@ sub new
 sub parser
 {
     my $class = shift;
-    my $parser = $class->create_parser( @_ );
+    my $parser = $class->create_end_parser( \@_ );
 
     # Do we need to instantiate a new object for return,
     # or are we modifying an existing object?
