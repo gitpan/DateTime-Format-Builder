@@ -1,4 +1,4 @@
-#line 1 "inc/YAML.pm - /opt/perl/5.8.0/lib/site_perl/5.8.0/YAML.pm"
+#line 1 "inc/YAML.pm - /opt/perl/5.8.2/lib/site_perl/5.8.2/YAML.pm"
 package YAML; 
 $VERSION = '0.35';
 
@@ -697,7 +697,7 @@ sub _parse {
     # not empty (after initial throwaways).
     if (not $o->{eos}) {
         if ($o->{lines}[0] !~ /^---(\s|$)/) {
-            unshift @{$o->{lines}}, '--- %YAML:1.0';
+            unshift @{$o->{lines}}, '--- #YAML:1.0';
             $o->{line}--;
         }
     }
@@ -713,7 +713,7 @@ sub _parse {
         if ($o->{lines}[0] =~ /^---\s*(.*)$/) {
             my @words = split /\s+/, $1;
             %directives = ();
-            while (@words && $words[0] =~ /^[%#](\w+):(\S.*)$/) {
+            while (@words && $words[0] =~ /^#(\w+):(\S.*)$/) {
                 my ($key, $value) = ($1, $2);
                 shift(@words);
                 if (defined $directives{$key}) {

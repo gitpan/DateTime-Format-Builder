@@ -1,4 +1,4 @@
-#line 1 "inc/YAML/Transfer.pm - /opt/perl/5.8.0/lib/site_perl/5.8.0/YAML/Transfer.pm"
+#line 1 "inc/YAML/Transfer.pm - /opt/perl/5.8.2/lib/site_perl/5.8.2/YAML/Transfer.pm"
 package YAML::Transfer;
 use strict;
 

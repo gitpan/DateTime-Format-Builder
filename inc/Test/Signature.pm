@@ -1,4 +1,4 @@
-#line 1 "inc/Test/Signature.pm - /opt/perl/5.8.0/lib/site_perl/5.8.0/Test/Signature.pm"
+#line 1 "inc/Test/Signature.pm - /opt/perl/5.8.2/lib/site_perl/5.8.2/Test/Signature.pm"
 package Test::Signature;
 
 #line 40

@@ -1,4 +1,4 @@
-#line 1 "inc/YAML/Node.pm - /opt/perl/5.8.0/lib/site_perl/5.8.0/YAML/Node.pm"
+#line 1 "inc/YAML/Node.pm - /opt/perl/5.8.2/lib/site_perl/5.8.2/YAML/Node.pm"
 package YAML::Node;
 
 use Exporter;

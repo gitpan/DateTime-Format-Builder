@@ -1,8 +1,8 @@
-# $Id: create.t,v 1.4 2003/06/24 07:16:28 koschei Exp $
+# $Id: create.t,v 1.5 2003/11/25 14:14:22 koschei Exp $
 use strict;
 use lib 'inc';
 use blib;
-use Test::More tests => 41;
+use Test::More tests => 47;
 use vars qw( $class );
 
 BEGIN {
@@ -88,6 +88,7 @@ my @parsers = (
     }
 }
 
+# A class that already has a new
 {
     sub ClassHasNew::new { return 'new' }
 
@@ -109,4 +110,45 @@ my @parsers = (
     ];
     ok( !$@, "No errors when creating the class." );
     is( ClassHasNew->new, 'new', "Don't overwrite existing new() method" );
+}
+
+# A class that tries to make a parser called 'new'
+{
+    sub ClassHasNewMethod::new { return 'new' }
+
+    eval q[
+	package ClassHasNewMethod;
+	use DateTime::Format::Builder
+	    parsers => {
+		new =>
+		{
+		    regex => qr/^(\d{4})(\d\d)(d\d)(\d\d)(\d\d)(\d\d)$/,
+		    params => [qw( year month day hour minute second )],
+		},
+	    };
+    ];
+    ok( $@, "Should have errors when creating class." );
+    like( $@, qr{Will not override a preexisting method}, "No overriding new with parser" );
+    is( ClassHasNewMethod->new, 'new', "Don't overwrite existing new() method" );
+}
+
+# A class that tries to override an existing 'new'
+{
+    sub ClassHasNewOver::new { return 'new' }
+
+    eval q[
+	package ClassHasNewOver;
+	use DateTime::Format::Builder
+            constructor => 1,
+	    parsers => {
+		parse_datetime =>
+		{
+		    regex => qr/^(\d{4})(\d\d)(d\d)(\d\d)(\d\d)(\d\d)$/,
+		    params => [qw( year month day hour minute second )],
+		},
+	    };
+    ];
+    ok( $@, "Should have errors when creating class." );
+    like( $@, qr{Will not override a preexisting constructor}, "No override new by intention" );
+    is( ClassHasNewOver->new, 'new', "Don't overwrite existing new() method" );
 }

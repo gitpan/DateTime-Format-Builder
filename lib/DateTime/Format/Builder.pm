@@ -1,5 +1,5 @@
 package DateTime::Format::Builder;
-# $Id: Builder.pm,v 1.31 2003/08/10 13:50:23 koschei Exp $
+# $Id: Builder.pm,v 1.33 2003/11/25 06:36:35 koschei Exp $
 
 =begin comments
 
@@ -17,7 +17,7 @@ use Params::Validate qw(
 use vars qw( $VERSION %dispatch_data );
 
 my $parser = 'DateTime::Format::Builder::Parser';
-$VERSION = '0.77';
+$VERSION = '0.78';
 
 # Developer oriented methods
 
@@ -99,10 +99,8 @@ sub create_class
 	# Write all our parser methods, creating parsers as we go.
 	while (my ($method, $parsers) = each %{ $args{parsers} })
 	{
-	    # I want to dereference the argument if it was a hash or
-	    # array ref. Coderefs? Straight through.
 	    my $globname = $target."::$method";
-	    croak "Will not override a preexisting new()" if defined &$globname;
+ 	    croak "Will not override a preexisting method $method()" if defined &{$globname};
 	    *$globname = $class->create_end_parser( $parsers );
 	}
     }
@@ -119,14 +117,14 @@ sub create_constructor
 
     return unless $value;
     return if not $intended and defined &$new;
-    croak "Will not override a preexisting new()" if defined &$new;
+    croak "Will not override a preexisting constructor new()" if defined &$new;
 
     no strict 'refs';
 
     return *$new = $value if ref $value eq 'CODE';
     return *$new = sub {
 	my $class = shift;
-	croak "${class}->new takes no parameters." if @_;
+ 	croak "${class}->new takes no parameters." if @_;
 
 	my $self = bless {}, ref($class)||$class;
 	# If called on an object, clone, but we've nothing to

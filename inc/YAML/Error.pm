@@ -1,4 +1,4 @@
-#line 1 "inc/YAML/Error.pm - /opt/perl/5.8.0/lib/site_perl/5.8.0/YAML/Error.pm"
+#line 1 "inc/YAML/Error.pm - /opt/perl/5.8.2/lib/site_perl/5.8.2/YAML/Error.pm"
 package YAML::Error;
 use strict;
 use YAML;
