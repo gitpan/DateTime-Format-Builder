@@ -1,4 +1,5 @@
-# $Id: extra.t,v 1.2 2003/03/25 08:01:51 autarch Exp $
+# $Id: extra.t,v 1.3 2003/05/23 07:39:45 koschei Exp $
+use lib 'inc';
 use strict;
 use Test::More tests => 2;
 

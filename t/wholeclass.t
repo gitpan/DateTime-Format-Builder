@@ -1,5 +1,6 @@
-# $Id: wholeclass.t,v 1.1 2003/03/25 04:25:40 koschei Exp $
+# $Id: wholeclass.t,v 1.2 2003/05/23 07:39:45 koschei Exp $
 use strict;
+use lib 'inc';
 use Test::More tests => 8;
 
 package DateTime::Format::ICal15;

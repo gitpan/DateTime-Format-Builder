@@ -1,4 +1,5 @@
-# $Id: newclass.t,v 1.1 2003/03/25 04:25:40 koschei Exp $
+# $Id: newclass.t,v 1.2 2003/05/23 07:39:45 koschei Exp $
+use lib 'inc';
 use strict;
 use Test::More tests => 9;
 use vars qw( $class );

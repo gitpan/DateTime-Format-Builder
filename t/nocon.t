@@ -1,4 +1,5 @@
-# $Id: nocon.t,v 1.1 2003/04/20 06:52:18 koschei Exp $
+# $Id: nocon.t,v 1.2 2003/05/23 07:39:45 koschei Exp $
+use lib 'inc';
 use strict;
 use Test::More tests => 10;
 use vars qw( $class %parsers );
