@@ -1,5 +1,5 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.38.
+signed via the Module::Signature module, version 0.39.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
@@ -19,22 +19,22 @@ SHA1 7a95fc8778fbce1f60d222e0d0d1dbb6c649461f Artistic
 SHA1 70e5de2deb0571ab841a226213a019f208cd77d2 Build.PL
 SHA1 531e6b5c470d4726483fd68833391653eace0a92 COPYING
 SHA1 00b8084495b5b9cdc4bcbb7dd90b912b052453ee CREDITS
-SHA1 4f28f18073404dd616993fdb30e0510d956b67f1 Changes
+SHA1 9128075fc50c78ddaf82bfe80e8db2414c6edb0f Changes
 SHA1 7a273ac56274461c440f658bdab758a94b31ac23 INSTALL
 SHA1 a4f818254f51015b8d7606b73db0ad92f8641463 LICENCE
 SHA1 53f412678b18dc77d55fb16fea2de22372206195 MANIFEST
 SHA1 d31c065d32a5b2b79340912c172c3069d29f32bc MANIFEST.SKIP
-SHA1 2629b53dd14fc074383156d3ee828daf1af625ec META.yml
+SHA1 bde2c9de0772bbc57c76088db57bb03f55086b2a META.yml
 SHA1 1099db72cd05ad1cad02a0b579d5f8c9786e1e92 Makefile.PL
 SHA1 6b2a574958154f535e7ea7d1a7946ebb3a34e93c README
-SHA1 490a1757ea5183f2a0ddc84563abe2d3bdb6272c examples/Apache.pm
+SHA1 f35ac145f4a1379286bf4cebb9f2b268d55e10a4 examples/Apache.pm
 SHA1 0bc31aa3397f1078efb83a6eff3ca4b3396a8921 examples/Fall.pm
-SHA1 c3b2647784b6a351233732676ef49e725d2db4d9 examples/ICal.pm
-SHA1 1a9b1adec2c20a9694bcd7358451a5a11429d795 examples/MySQL.pm
+SHA1 dae51da84aeab9d3dcc634a820374ccd9070b4ee examples/ICal.pm
+SHA1 1a9e35a549ac6b6a854314fc0424badb6c09833d examples/MySQL.pm
 SHA1 d882c0f4639ed4721524afbd1ac4a5bedb471d9c examples/Simple.pm
-SHA1 23306dcfaccaca37b67ded31f05805df47ece974 examples/Tivoli.pm
-SHA1 4000a671d01ce9a4c916a0b6eae0931c8da48f13 examples/W3CDTF.pm
-SHA1 56142c59f9c55e4ae9b4b32dedf72fd09bf93ce5 lib/DateTime/Format/Builder.pm
+SHA1 bdadcfd2bdbac90edbda48322fea700204dbeb05 examples/Tivoli.pm
+SHA1 319195d800e24f7db0fcb73765c5ffd8abf020cf examples/W3CDTF.pm
+SHA1 0718e5bfb8aefde968bbd0d62501c12d5f386b66 lib/DateTime/Format/Builder.pm
 SHA1 6b9d88d681693cb8ae7fa40a3750980770f34901 lib/DateTime/Format/Builder.pod
 SHA1 0e8e4c765fbc1c32efd2a11fb2c869c0805600f7 lib/DateTime/Format/Builder/Parser.pm
 SHA1 d5c9f085e6f4915f7b1147cad0dbe60c9f634d44 lib/DateTime/Format/Builder/Parser/Dispatch.pm
@@ -70,7 +70,7 @@ SHA1 d9313f5e6bdcf0db20787bf4fe354c5c357bf504 t/wholeclass.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.4 (GNU/Linux)
 
-iD8DBQFArj47+4tbS/niBUoRAk+eAJ4ost4IJRj/gtePrQflIV0dP6l5jACfaYnV
-2QNhtkXgtXqhL9pjYUlymPA=
-=NefK
+iD8DBQFA7CNj3Or3ZzQuifMRAqQIAJ4hbEn2vrOGUViVCbuH/GeTlw31dwCdEElc
+BwSDqM7K9AhdJyvLCMmr0/U=
+=gKb8
 -----END PGP SIGNATURE-----

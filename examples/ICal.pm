@@ -1,10 +1,7 @@
-package DateTime::Format::ICal;
+# we need to comment this out or PAUSE might index it
+# pack age DateTime::Format::ICal;
 
 use strict;
-
-use vars qw ($VERSION);
-
-$VERSION = '0.03';
 
 use DateTime;
 
