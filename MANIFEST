@@ -51,5 +51,4 @@ t/self.t
 t/strptime.t
 t/verbose.t
 t/wholeclass.t
-
 SIGNATURE    Added here by Module::Build

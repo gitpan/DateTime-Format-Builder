@@ -1,6 +1,5 @@
-# $Id: basic.t,v 1.5 2004/01/26 18:46:46 autarch Exp $
-use lib 'inc';
-use blib;
+#!/usr/bin/perl -wT
+
 use strict;
 use Test::More tests => 5;
 
