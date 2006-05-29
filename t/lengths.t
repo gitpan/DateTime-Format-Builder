@@ -1,4 +1,4 @@
-# $Id: lengths.t,v 1.5 2003/06/25 08:38:14 koschei Exp $
+# $Id: lengths.t 655 2003-06-25 08:38:14Z koschei $
 use strict;
 use lib 'inc';
 use blib;

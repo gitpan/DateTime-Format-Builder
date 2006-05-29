@@ -1,4 +1,4 @@
-# $Id: altcon.t,v 1.3 2003/08/10 13:38:29 koschei Exp $
+# $Id: altcon.t 676 2003-08-10 13:38:29Z koschei $
 use strict;
 use lib 'inc';
 use blib;

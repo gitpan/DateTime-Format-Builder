@@ -1,4 +1,4 @@
-# $Id: newclass.t,v 1.4 2003/11/25 14:14:22 koschei Exp $
+# $Id: newclass.t 691 2003-11-25 14:14:22Z koschei $
 use lib 'inc';
 use blib;
 use strict;

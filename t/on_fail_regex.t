@@ -1,4 +1,4 @@
-# $Id: on_fail_regex.t,v 1.1 2004/01/30 07:09:13 lestrrat Exp $
+# $Id: on_fail_regex.t 717 2005-09-30 05:52:12Z autarch $
 use strict;
 use lib 'inc';
 use blib;
@@ -30,6 +30,5 @@ BEGIN {
     my $str = eval { $o->parse_datetime("FooBlah") };
     my $e = $@;
     my $file = __FILE__;
-    like($e, qr(at $file), "Should croak from this file");
+    like($e, qr(at \Q$file\E), "Should croak from this file");
 }
-    

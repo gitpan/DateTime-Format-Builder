@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: strptime.t,v 1.5 2003/08/10 13:38:29 koschei Exp $
+# $Id: strptime.t 676 2003-08-10 13:38:29Z koschei $
 use lib 'inc';
 use blib;
 use Test::More tests => 25;

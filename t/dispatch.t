@@ -1,4 +1,4 @@
-# $Id: dispatch.t,v 1.2 2003/11/25 06:36:35 koschei Exp $
+# $Id: dispatch.t 690 2003-11-25 06:36:35Z koschei $
 use lib 'inc';
 use strict;
 use blib;

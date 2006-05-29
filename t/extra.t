@@ -1,4 +1,4 @@
-# $Id: extra.t,v 1.4 2003/06/24 07:16:28 koschei Exp $
+# $Id: extra.t 645 2003-06-24 07:16:28Z koschei $
 use lib 'inc';
 use blib;
 use strict;

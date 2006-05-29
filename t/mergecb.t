@@ -1,4 +1,4 @@
-# $Id: mergecb.t,v 1.4 2003/06/24 07:16:28 koschei Exp $
+# $Id: mergecb.t 645 2003-06-24 07:16:28Z koschei $
 use Test::More tests => 8;
 use lib 'inc';
 use blib;

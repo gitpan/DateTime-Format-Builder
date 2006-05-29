@@ -1,4 +1,4 @@
-# $Id: on_fail.t,v 1.1 2003/08/10 13:38:29 koschei Exp $
+# $Id: on_fail.t 676 2003-08-10 13:38:29Z koschei $
 use strict;
 use lib 'inc';
 use blib;
