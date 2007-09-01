@@ -1,6 +1,6 @@
 ---
 name: DateTime-Format-Builder
-version: 0.79
+version: 0.7901
 author:
   - |-
     Originally written by Iain Truskett <spoon@cpan.org>, who died on
@@ -21,7 +21,7 @@ build_requires:
 provides:
   DateTime::Format::Builder:
     file: lib/DateTime/Format/Builder.pm
-    version: 0.79
+    version: 0.7901
   DateTime::Format::Builder::Parser:
     file: lib/DateTime/Format/Builder/Parser.pm
     version: 0.77
