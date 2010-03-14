@@ -1,14 +1,9 @@
-# $Id: verbose.t 645 2003-06-24 07:16:28Z koschei $
-use lib 'inc';
-use blib;
 use strict;
-use Test::More tests => 5;
-use vars qw( $class );
 
-BEGIN {
-    $class = 'DateTime::Format::Builder';
-    use_ok $class;
-}
+use Test::More tests => 4;
+
+use DateTime::Format::Builder;
+
 
 # Does verbose() work properly?
 SKIP: {

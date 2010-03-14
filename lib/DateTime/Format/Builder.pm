@@ -1,5 +1,5 @@
 package DateTime::Format::Builder;
-# $Id: Builder.pm 3748 2007-09-01 20:56:42Z autarch $
+# $Id: Builder.pm 4400 2010-03-14 15:49:10Z autarch $
 
 =begin comments
 
@@ -17,7 +17,7 @@ use Params::Validate qw(
 use vars qw( $VERSION %dispatch_data );
 
 my $parser = 'DateTime::Format::Builder::Parser';
-$VERSION = '0.7901';
+$VERSION = '0.80';
 
 # Developer oriented methods
 

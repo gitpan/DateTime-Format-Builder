@@ -1,16 +1,9 @@
-# $Id: dispatch.t 690 2003-11-25 06:36:35Z koschei $
-use lib 'inc';
 use strict;
-use blib;
 
-use Test::More tests => 23;
+use Test::More tests => 22;
 
-BEGIN {
-    my $class = 'DateTime::Format::Builder';
-    use_ok $class;
-}
+use DateTime::Format::Builder;
 
-# ------------------------------------------------------------------------
 
 {
     eval q[

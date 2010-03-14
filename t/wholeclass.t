@@ -1,8 +1,7 @@
-# $Id: wholeclass.t 645 2003-06-24 07:16:28Z koschei $
 use strict;
-use blib;
-use lib 'inc';
+
 use Test::More tests => 8;
+
 
 package DateTime::Format::ICal15;
 use DateTime::Format::Builder;

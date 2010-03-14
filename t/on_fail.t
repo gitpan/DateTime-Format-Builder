@@ -1,16 +1,9 @@
-# $Id: on_fail.t 676 2003-08-10 13:38:29Z koschei $
 use strict;
-use lib 'inc';
-use blib;
-use Test::More tests => 9;
-use vars qw( $class );
 
-BEGIN {
-    $class = 'DateTime::Format::Builder';
-    use_ok $class;
-}
+use Test::More tests => 7;
 
-# ------------------------------------------------------------------------
+use DateTime::Format::Builder;
+
 
 {
     eval q|
@@ -59,5 +52,3 @@ BEGIN {
     ok( !$@, "Bad parse gives no error" );
     ok( (!defined($bad_parse)), "Bad parse correctly gives undef" );
 }
-
-pass 'All done';

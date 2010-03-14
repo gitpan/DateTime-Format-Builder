@@ -11,7 +11,6 @@ examples/MySQL.pm
 examples/Simple.pm
 examples/Tivoli.pm
 examples/W3CDTF.pm
-INSTALL
 lib/DateTime/Format/Builder.pm
 lib/DateTime/Format/Builder.pod
 lib/DateTime/Format/Builder/Parser.pm
@@ -22,12 +21,7 @@ lib/DateTime/Format/Builder/Parser/Regex.pm
 lib/DateTime/Format/Builder/Parser/Strptime.pm
 lib/DateTime/Format/Builder/Tutorial.pod
 LICENCE
-Makefile.PL
-MANIFEST
-MANIFEST.SKIP
-META.yml
-README
-t/00sig.t
+MANIFEST			This list of files
 t/99pod.t
 t/altcon.t
 t/basic.t
@@ -53,4 +47,7 @@ t/strptime.t
 t/taint.t
 t/verbose.t
 t/wholeclass.t
+Makefile.PL
+README
+META.yml
 SIGNATURE    Added here by Module::Build

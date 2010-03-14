@@ -1,13 +1,7 @@
-# $Id: import.t 645 2003-06-24 07:16:28Z koschei $
-use Test::More tests => 8;
-use lib 'inc';
-use blib;
-use vars qw( $class );
+use strict;
 
-BEGIN {
-    $class = 'DateTime::Format::Builder';
-    use_ok $class;
-}
+use Test::More tests => 7;
+
 
 {
     eval q[
