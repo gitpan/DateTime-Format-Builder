@@ -1,18 +1,17 @@
 use strict;
+use warnings;
 
-use Test::More tests => 1;
+use Test::More;
 
 use DateTime::Format::Builder;
 
-
 my %parsers = (
     parsers => {
-	parse_datetime =>
-	{
-	    length => 8,
-	    regex => qr/^abcdef$/,
-	    params => [qw( year month day )],
-	}
+        parse_datetime => {
+            length => 8,
+            regex  => qr/^abcdef$/,
+            params => [qw( year month day )],
+        }
     }
 );
 
@@ -23,11 +22,13 @@ my %parsers = (
     my $class = 'SampleClassHasParser';
     sub SampleClassHasParser::parse_datetime { return "4" }
     eval q[
-	package SampleClassHasParser;
-	use DateTime::Format::Builder
-	    constructor => 1,
-	    %parsers;
-	1;
+    package SampleClassHasParser;
+    use DateTime::Format::Builder
+        constructor => 1,
+        %parsers;
+    1;
     ];
     ok( $@, "Error when creating class." );
 }
+
+done_testing();

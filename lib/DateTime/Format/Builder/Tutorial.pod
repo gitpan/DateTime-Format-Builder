@@ -1,6 +1,18 @@
+package DateTime::Format::Builder::Tutorial;
+
+# ABSTRACT: Quick class on using Builder
+
+__END__
+
+=pod
+
 =head1 NAME
 
 DateTime::Format::Builder::Tutorial - Quick class on using Builder
+
+=head1 VERSION
+
+version 0.81
 
 =head1 CREATING A CLASS
 
@@ -304,10 +316,6 @@ it under the same terms as Perl itself.
 The full text of the licenses can be found in the F<Artistic> and
 F<COPYING> files included with this document.
 
-=head1 AUTHOR
-
-Iain Truskett <spoon@cpan.org>
-
 =head1 SEE ALSO
 
 C<datetime@perl.org> mailing list.
@@ -316,5 +324,26 @@ http://datetime.perl.org/
 
 L<perl>, L<DateTime>, L<DateTime::Format::Builder>
 
-=cut
+=head1 AUTHORS
 
+=over 4
+
+=item *
+
+Dave Rolsky <autarch@urth.org>
+
+=item *
+
+Iain Truskett
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is Copyright (c) 2013 by Dave Rolsky.
+
+This is free software, licensed under:
+
+  The Artistic License 2.0 (GPL Compatible)
+
+=cut

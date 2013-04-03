@@ -1,15 +1,400 @@
 package DateTime::Format::Builder::Parser;
+{
+  $DateTime::Format::Builder::Parser::VERSION = '0.81';
+}
 use strict;
-use vars qw( $VERSION );
+use warnings;
 use Carp qw( croak );
 use Params::Validate qw(
     validate SCALAR CODEREF UNDEF ARRAYREF
 );
 use Scalar::Util qw( weaken );
 
+
+
+
+sub on_fail {
+    my ( $self, $input, $parent ) = @_;
+    my $maker = $self->maker;
+    if ( $maker and $maker->can('on_fail') ) {
+        $maker->on_fail($input);
+    }
+    else {
+        croak __PACKAGE__ . ": Invalid date format: $input";
+    }
+}
+
+sub no_parser {
+    croak "No parser set for this parser object.";
+}
+
+sub new {
+    my $class = shift;
+    $class = ref($class) || $class;
+    my $i    = 0;
+    my $self = bless {
+        on_fail => \&on_fail,
+        parser  => \&no_parser,
+    }, $class;
+
+    return $self;
+}
+
+sub maker { $_[0]->{maker} }
+
+sub set_maker {
+    my $self  = shift;
+    my $maker = shift;
+
+    $self->{maker} = $maker;
+    weaken $self->{maker}
+        if ref $self->{maker};
+
+    return $self;
+}
+
+sub fail {
+    my ( $self, $parent, $input ) = @_;
+    $self->{on_fail}->( $self, $input, $parent );
+}
+
+sub parse {
+    my ( $self, $parent, $input, @args ) = @_;
+    my $r = $self->{parser}->( $parent, $input, @args );
+    $self->fail( $parent, $input ) unless defined $r;
+    $r;
+}
+
+sub set_parser {
+    my ( $self, $parser ) = @_;
+    $self->{parser} = $parser;
+    $self;
+}
+
+sub set_fail {
+    my ( $self, $fail ) = @_;
+    $self->{on_fail} = $fail;
+    $self;
+}
+
+
+my @callbacks = qw( on_match on_fail postprocess preprocess );
+
+{
+
+
+    my %params = (
+        common => {
+            length => {
+                type      => SCALAR | ARRAYREF,
+                optional  => 1,
+                callbacks => {
+                    'is an int' => sub { ref $_[0] ? 1 : $_[0] !~ /\D/ },
+                    'not empty' => sub { ref $_[0] ? @{ $_[0] } >= 1 : 1 },
+                }
+            },
+
+            # Stuff used by callbacks
+            label => { type => SCALAR, optional => 1 },
+            (
+                map { $_ => { type => CODEREF | ARRAYREF, optional => 1 } }
+                    @callbacks
+            ),
+        },
+    );
+
+
+    sub params {
+        my $self = shift;
+        my $caller = ref $self || $self;
+        return { map { %$_ } @params{ $caller, 'common' } };
+    }
+
+
+    my $all_params;
+
+    sub params_all {
+        return $all_params if defined $all_params;
+        my %all_params = map { %$_ } values %params;
+        $_->{optional} = 1 for values %all_params;
+        $all_params = \%all_params;
+    }
+
+
+    my %inverse;
+
+    sub valid_params {
+        my $self = shift;
+        my $from = (caller)[0];
+        my %args = @_;
+        $params{$from} = \%args;
+        for ( keys %args ) {
+
+            # %inverse contains keys matching all the
+            # possible params; values are the class if and
+            # only if that class is the only one that uses
+            # the given param.
+            $inverse{$_} = exists $inverse{$_} ? undef : $from;
+        }
+        undef $all_params;
+        1;
+    }
+
+
+    sub whose_params {
+        my $param = shift;
+        return $inverse{$param};
+    }
+}
+
+
+sub create_single_object {
+    my ($self) = shift;
+    my $obj    = $self->new;
+    my $parser = $self->create_single_parser(@_);
+
+    $obj->set_parser($parser);
+}
+
+sub create_single_parser {
+    my $class = shift;
+    return $_[0] if ref $_[0] eq 'CODE';    # already code
+    @_ = %{ $_[0] } if ref $_[0] eq 'HASH'; # turn hashref into hash
+                                            # ordinary boring sort
+    my %args = validate( @_, params_all() );
+
+    # Determine variables for ease of reference.
+    for (@callbacks) {
+        $args{$_} = $class->merge_callbacks( $args{$_} ) if $args{$_};
+    }
+
+    # Determine parser class
+    my $from;
+    for ( keys %args ) {
+        $from = whose_params($_);
+        next if ( not defined $from ) or ( $from eq 'common' );
+        last;
+    }
+    croak "Could not identify a parsing module to use." unless $from;
+
+    # Find and call parser creation method
+    my $method = $from->can("create_parser")
+        or croak
+        "Can't create a $_ parser (no appropriate create_parser method)";
+    my @args = %args;
+    %args = validate( @args, $from->params() );
+    $from->$method(%args);
+}
+
+
+sub merge_callbacks {
+    my $self = shift;
+
+    return unless @_;       # No arguments
+    return unless $_[0];    # Irrelevant argument
+    my @callbacks = @_;
+    if ( @_ == 1 ) {
+        return $_[0] if ref $_[0] eq 'CODE';
+        @callbacks = @{ $_[0] } if ref $_[0] eq 'ARRAY';
+    }
+    return unless @callbacks;
+
+    for (@callbacks) {
+        croak "All callbacks must be coderefs!" unless ref $_ eq 'CODE';
+    }
+
+    return sub {
+        my $rv;
+        my %args = @_;
+        for my $cb (@callbacks) {
+            $rv = $cb->(%args);
+            return $rv unless $rv;
+
+            # Ugh. Symbiotic. All but postprocessor return the date.
+            $args{input} = $rv unless $args{parsed};
+        }
+        $rv;
+    };
+}
+
+
+sub create_multiple_parsers {
+    my $class = shift;
+    my ( $options, @specs ) = @_;
+
+    my $obj = $class->new;
+
+    # Organise the specs, and transform them into parsers.
+    my ( $lengths, $others ) = $class->sort_parsers( $options, \@specs );
+
+    # Merge callbacks if any.
+    for ('preprocess') {
+        $options->{$_} = $class->merge_callbacks( $options->{$_} )
+            if $options->{$_};
+    }
+
+    # Custom fail method?
+    $obj->set_fail( $options->{on_fail} ) if exists $options->{on_fail};
+
+    # Who's our maker?
+    $obj->set_maker( $options->{maker} ) if exists $options->{maker};
+
+    # We don't want to save the whole options hash as a closure, since
+    # that can cause a circular reference when $options->{maker} is
+    # set.
+    my $preprocess = $options->{preprocess};
+
+    # These are the innards of a multi-parser.
+    my $parser = sub {
+        my ( $self, $date, @args ) = @_;
+        return unless defined $date;
+
+        # Parameters common to the callbacks. Pre-prepared.
+        my %param = (
+            self => $self,
+            ( @args ? ( args => \@args ) : () ),
+        );
+
+        my %p;
+
+        # Preprocess and potentially fill %p
+        if ($preprocess) {
+            $date = $preprocess->( input => $date, parsed => \%p, %param );
+        }
+
+        # Find length parser
+        if (%$lengths) {
+            my $length = length $date;
+            my $parser = $lengths->{$length};
+            if ($parser) {
+
+                # Found one, call it with _copy_ of %p
+                my $dt = $parser->( $self, $date, {%p}, @args );
+                return $dt if defined $dt;
+            }
+        }
+
+        # Or calls all others, with _copy_ of %p
+        for my $parser (@$others) {
+            my $dt = $parser->( $self, $date, {%p}, @args );
+            return $dt if defined $dt;
+        }
+
+        # Failed, return undef.
+        return;
+    };
+    $obj->set_parser($parser);
+}
+
+
+sub sort_parsers {
+    my $class = shift;
+    my ( $options, $specs ) = @_;
+    my ( %lengths, @others );
+
+    for my $spec (@$specs) {
+
+        # Put coderefs straight into the 'other' heap.
+        if ( ref $spec eq 'CODE' ) {
+            push @others, $spec;
+        }
+
+        # Specifications...
+        elsif ( ref $spec eq 'HASH' ) {
+            if ( exists $spec->{length} ) {
+                my $code = $class->create_single_parser(%$spec);
+                my @lengths
+                    = ref $spec->{length}
+                    ? @{ $spec->{length} }
+                    : ( $spec->{length} );
+                for my $length (@lengths) {
+                    push @{ $lengths{$length} }, $code;
+                }
+            }
+            else {
+                push @others, $class->create_single_parser(%$spec);
+            }
+        }
+
+        # Something else
+        else {
+            croak "Invalid specification in list.";
+        }
+    }
+
+    while ( my ( $length, $parsers ) = each %lengths ) {
+        $lengths{$length} = $class->chain_parsers($parsers);
+    }
+
+    return ( \%lengths, \@others );
+}
+
+sub chain_parsers {
+    my ( $self, $parsers ) = @_;
+    return $parsers->[0] if @$parsers == 1;
+    return sub {
+        my $self = shift;
+        for my $parser (@$parsers) {
+            my $rv = $self->$parser(@_);
+            return $rv if defined $rv;
+        }
+        return undef;
+    };
+}
+
+
+sub create_parser {
+    my $class = shift;
+    if ( not ref $_[0] ) {
+
+        # Simple case of single specification as a hash
+        return $class->create_single_object(@_);
+    }
+
+    # Let's see if we were given an options block
+    my %options;
+    while ( ref $_[0] eq 'ARRAY' ) {
+        my $options = shift;
+        %options = ( %options, @$options );
+    }
+
+    # Now, can we create a multi-parser out of the remaining arguments?
+    if ( ref $_[0] eq 'HASH' or ref $_[0] eq 'CODE' ) {
+        return $class->create_multiple_parsers( \%options, @_ );
+    }
+    else {
+        # If it wasn't a HASH or CODE, then it was (ideally)
+        # a list of pairs describing a single specification.
+        return $class->create_multiple_parsers( \%options, {@_} );
+    }
+}
+
+
+# Find all our workers
+{
+    use Class::Factory::Util 1.6;
+
+    foreach my $worker ( __PACKAGE__->subclasses ) {
+        eval "use DateTime::Format::Builder::Parser::$worker;";
+        die $@ if $@;
+    }
+}
+
+1;
+
+# ABSTRACT: Parser creation
+
+__END__
+
+=pod
+
 =head1 NAME
 
 DateTime::Format::Builder::Parser - Parser creation
+
+=head1 VERSION
+
+version 0.81
 
 =head1 SYNOPSIS
 
@@ -22,84 +407,7 @@ This is a utility class for L<DateTime::Format::Builder> that
 handles creation of parsers. It is to here that C<Builder> delegates
 most of its responsibilities.
 
-=cut
-
-$VERSION = '0.77';
-
 =head1 CONSTRUCTORS
-
-=cut
-
-sub on_fail
-{
-    my ($self, $input, $parent) = @_;
-    my $maker = $self->maker;
-    if ( $maker and $maker->can( 'on_fail' ) ) {
-        $maker->on_fail( $input );
-    } else {
-        croak __PACKAGE__.": Invalid date format: $input";
-    }
-}
-
-sub no_parser
-{
-    croak "No parser set for this parser object.";
-}
-
-sub new
-{
-    my $class = shift;
-    $class = ref($class)||$class;
-    my $i = 0;
-    my $self = bless {
-        on_fail => \&on_fail,
-        parser => \&no_parser,
-    }, $class;
-
-    return $self;
-}
-
-sub maker { $_[0]->{maker} }
-
-sub set_maker
-{
-    my $self  = shift;
-    my $maker = shift;
-
-    $self->{maker} = $maker;
-    weaken $self->{maker}
-        if ref $self->{maker};
-
-    return $self;
-}
-
-sub fail
-{
-    my ($self, $parent, $input) = @_;
-    $self->{on_fail}->( $self, $input, $parent );
-}
-
-sub parse
-{
-    my ( $self, $parent, $input, @args ) = @_;
-    my $r = $self->{parser}->( $parent, $input, @args );
-    $self->fail( $parent, $input ) unless defined $r;
-    $r;
-}
-
-sub set_parser
-{
-    my ($self, $parser) = @_;
-    $self->{parser} = $parser;
-    $self;
-}
-
-sub set_fail
-{
-    my ($self, $fail) = @_;
-    $self->{on_fail} = $fail;
-    $self;
-}
 
 =head1 METHODS
 
@@ -116,17 +424,11 @@ their arguments in a standard manner and due to C<Parser>'s
 impelementation, these methods also allow C<Parser> to
 determine which implementation to use.
 
-=cut
-
-my @callbacks = qw( on_match on_fail postprocess preprocess );
-
-{
-
 =head3 Common parameters
 
 These parameters appear for all parser implementations.
 These are primarily documented in
-L<the main docs|DateTime::Format::Builder/"SINGLE SPECIFICATIONS">.
+L<DateTime::Format::Builder>.
 
 =over 4
 
@@ -159,25 +461,6 @@ numbers, please keep the number of numbers to a minimum.
 
 =back
 
-=cut
-
-    my %params = (
-	common => {
-	    length	=> {
-		type      => SCALAR|ARRAYREF,
-		optional  => 1,
-		callbacks => {
-		    'is an int' => sub { ref $_[0] ? 1 : $_[0] !~ /\D/ },
-		    'not empty' => sub { ref $_[0] ? @{$_[0]} >= 1 : 1 },
-		}
-	    },
-
-	    # Stuff used by callbacks
-	    label	=> { type => SCALAR,	optional => 1 },
-	    ( map { $_ => { type => CODEREF|ARRAYREF, optional => 1 } } @callbacks ),
-	},
-    );
-
 =head3 params
 
     my $params = $self->params();
@@ -186,32 +469,12 @@ numbers, please keep the number of numbers to a minimum.
 Returns declared parameters and C<common> parameters in a hashref
 suitable for handing to L<Params::Validate>'s C<validate> function.
 
-=cut
-
-    sub params
-    {
-	my $self = shift;
-	my $caller = ref $self || $self;
-	return { map { %$_ } @params{ $caller, 'common' } }
-    }
-
 =head3 params_all
 
     my $all_params = $self->params_all();
 
 Returns a hash of all the valid options. Not recommended
 for general use.
-
-=cut
-
-    my $all_params;
-    sub params_all
-    {
-	return $all_params if defined $all_params;
-	my %all_params = map { %$_ } values %params;
-	$_->{optional} = 1 for values %all_params;
-	$all_params = \%all_params;
-    }
 
 =head3 valid_params
 
@@ -221,42 +484,12 @@ Arguments are as per L<Params::Validate>'s C<validate> function.
 This method is used to declare what your valid arguments are in
 a parser specification.
 
-=cut
-
-    my %inverse;
-    sub valid_params
-    {
-	my $self = shift;
-	my $from = (caller)[0];
-	my %args = @_;
-	$params{ $from } = \%args;
-	for (keys %args)
-	{
-	    # %inverse contains keys matching all the
-	    # possible params; values are the class if and
-	    # only if that class is the only one that uses
-	    # the given param.
-	    $inverse{$_} = exists $inverse{$_} ? undef : $from;
-	}
-	undef $all_params;
-	1;
-    }
-
 =head3 whose_params
 
     my $class = whose_params( $key );
 
 Internal function which merely returns to which class a
 parameter is unique. If not unique, returns C<undef>.
-
-=cut
-
-    sub whose_params
-    {
-	my $param = shift;
-	return $inverse{$param};
-    }
-}
 
 =head2 Organising and Creating Parsers
 
@@ -272,7 +505,7 @@ returned (it is assumed to be appropriate).
 
 The single specification (if not a coderef) can be either a
 hashref or a hash. The keys and values must be as per the
-L<specification|/"SINGLE SPECIFICATIONS">.
+specification.
 
 It is here that any arrays of callbacks are unified. It is
 also here that any parser implementations are used. With
@@ -291,88 +524,10 @@ reasons.
 The returned parser will return either a C<DateTime> object
 or C<undef>.
 
-=cut
-
-sub create_single_object
-{
-    my ( $self ) = shift;
-    my $obj = $self->new;
-    my $parser = $self->create_single_parser( @_ );
-
-    $obj->set_parser( $parser );
-}
-
-sub create_single_parser
-{
-    my $class = shift;
-    return $_[0] if ref $_[0] eq 'CODE'; # already code
-    @_ = %{ $_[0] } if ref $_[0] eq 'HASH'; # turn hashref into hash
-    # ordinary boring sort
-    my %args = validate( @_, params_all() );
-
-    # Determine variables for ease of reference.
-    for (@callbacks)
-    {
-	$args{$_} = $class->merge_callbacks( $args{$_} ) if $args{$_};
-    }
-
-    # Determine parser class
-    my $from;
-    for ( keys %args )
-    {
-	$from = whose_params( $_ );
-	next if (not defined $from) or ($from eq 'common');
-	last;
-    }
-    croak "Could not identify a parsing module to use." unless $from;
-
-    # Find and call parser creation method
-    my $method = $from->can( "create_parser" )
-	or croak "Can't create a $_ parser (no appropriate create_parser method)";
-    my @args = %args;
-    %args = validate( @args, $from->params() );
-    $from->$method( %args );
-}
-
 =head3 merge_callbacks
 
 Produce either undef or a single coderef from either undef,
 an empty array, a single coderef or an array of coderefs
-
-=cut
-
-sub merge_callbacks
-{
-    my $self = shift;
-
-    return unless @_; # No arguments
-    return unless $_[0]; # Irrelevant argument
-    my @callbacks = @_;
-    if (@_ == 1)
-    {
-	return $_[0] if ref $_[0] eq 'CODE';
-	@callbacks = @{ $_[0] } if ref $_[0] eq 'ARRAY';
-    }
-    return unless @callbacks;
-
-    for (@callbacks)
-    {
-	croak "All callbacks must be coderefs!" unless ref $_ eq 'CODE';
-    }
-
-    return sub {
-	my $rv;
-	my %args = @_;
-	for my $cb (@callbacks)
-	{
-	    $rv = $cb->( %args );
-	    return $rv unless $rv;
-	    # Ugh. Symbiotic. All but postprocessor return the date.
-	    $args{input} = $rv unless $args{parsed};
-	}
-	$rv;
-    };
-}
 
 =head2 create_multiple_parsers
 
@@ -383,78 +538,6 @@ or C<undef>.
 
 It first sorts the specifications using C<sort_parsers()>
 and then creates the function based on what that returned.
-
-=cut
-
-sub create_multiple_parsers
-{
-    my $class = shift;
-    my ($options, @specs) = @_;
-
-    my $obj = $class->new;
-
-    # Organise the specs, and transform them into parsers.
-    my ($lengths, $others) = $class->sort_parsers( $options, \@specs );
-
-    # Merge callbacks if any.
-    for ( 'preprocess' ) {
-	$options->{$_} = $class->merge_callbacks(
-	    $options->{$_}
-	) if $options->{$_};
-    }
-    # Custom fail method?
-    $obj->set_fail( $options->{on_fail} ) if exists $options->{on_fail};
-    # Who's our maker?
-    $obj->set_maker( $options->{maker} ) if exists $options->{maker};
-
-    # We don't want to save the whole options hash as a closure, since
-    # that can cause a circular reference when $options->{maker} is
-    # set.
-    my $preprocess = $options->{preprocess};
-
-    # These are the innards of a multi-parser.
-    my $parser = sub {
-	my ($self, $date, @args) = @_;
-	return unless defined $date;
-
-	# Parameters common to the callbacks. Pre-prepared.
-	my %param = (
-	    self => $self,
-	    ( @args ? (args => \@args) : () ),
-	);
-
-	my %p;
-	# Preprocess and potentially fill %p
-	if ($preprocess)
-	{
-	    $date = $preprocess->(
-		input => $date, parsed => \%p, %param
-	    );
-	}
-
-	# Find length parser
-	if (%$lengths)
-	{
-	    my $length = length $date;
-	    my $parser = $lengths->{$length};
-	    if ($parser)
-	    {
-		# Found one, call it with _copy_ of %p
-		my $dt = $parser->( $self, $date, { %p }, @args );
-		return $dt if defined $dt;
-	    }
-	}
-	# Or calls all others, with _copy_ of %p
-	for my $parser (@$others)
-	{
-	    my $dt = $parser->( $self, $date, { %p }, @args );
-	    return $dt if defined $dt;
-	}
-	# Failed, return undef.
-	return;
-    };
-    $obj->set_parser( $parser );
-}
 
 =head2 sort_parsers
 
@@ -477,70 +560,6 @@ C<create_single_parser()>, but the resultant parser is used
 as the value in the length hashref with the length being the
 key. If two or more parsers have the same I<length>
 specified then an error is thrown.
-
-=cut
-
-sub sort_parsers
-{
-    my $class = shift;
-    my ($options, $specs) = @_;
-    my (%lengths, @others);
-
-    for my $spec (@$specs)
-    {
-	# Put coderefs straight into the 'other' heap.
-	if (ref $spec eq 'CODE')
-	{
-	    push @others, $spec;
-	}
-	# Specifications...
-	elsif (ref $spec eq 'HASH')
-	{
-	    if (exists $spec->{length})
-	    {
-		my $code = $class->create_single_parser( %$spec );
-		my @lengths = ref $spec->{length}
-		    ? @{ $spec->{length} }
-		    : ( $spec->{length} );
-		for my $length ( @lengths )
-		{
-		    push @{ $lengths{$length} }, $code;
-		}
-	    }
-	    else
-	    {
-		push @others, $class->create_single_parser( %$spec );
-	    }
-	}
-	# Something else
-	else
-	{
-	    croak "Invalid specification in list.";
-	}
-    }
-
-    while (my ($length, $parsers) = each %lengths)
-    {
-	$lengths{$length} = $class->chain_parsers( $parsers );
-    }
-
-    return ( \%lengths, \@others );
-}
-
-sub chain_parsers
-{
-    my ($self, $parsers) = @_;
-    return $parsers->[0] if @$parsers == 1;
-    return sub {
-	my $self = shift;
-	for my $parser (@$parsers)
-	{
-	    my $rv = $self->$parser( @_ );
-	    return $rv if defined $rv;
-	}
-	return undef;
-    };
-}
 
 =head2 create_parser
 
@@ -577,38 +596,6 @@ methods is then wrapped in a function that calls C<croak()>
 in event of failure or the C<DateTime> object in event of
 success.
 
-=cut
-
-sub create_parser
-{
-    my $class = shift;
-    if (not ref $_[0])
-    {
-	# Simple case of single specification as a hash
-	return $class->create_single_object( @_ )
-    }
-
-    # Let's see if we were given an options block
-    my %options;
-    while ( ref $_[0] eq 'ARRAY' )
-    {
-	my $options = shift;
-	%options = ( %options, @$options );
-    }
-
-    # Now, can we create a multi-parser out of the remaining arguments?
-    if (ref $_[0] eq 'HASH' or ref $_[0] eq 'CODE')
-    {
-	return $class->create_multiple_parsers( \%options, @_ );
-    }
-    else
-    {
-	# If it wasn't a HASH or CODE, then it was (ideally)
-        # a list of pairs describing a single specification.
-        return $class->create_multiple_parsers( \%options, { @_ } );
-    }
-}
-
 =head1 FINDING IMPLEMENTATIONS
 
 C<Parser> automatically loads any parser classes in C<@INC>.
@@ -618,23 +605,6 @@ C<DateTime::Format::Builder::Parser::XXX> module.
 
 To be invisible, and not loaded, start your class with a lower class
 letter. These are ignored.
-
-=cut
-
-# Find all our workers
-{
-    use Class::Factory::Util;
-
-    foreach my $worker ( __PACKAGE__->subclasses )
-    {
-        eval "use DateTime::Format::Builder::Parser::$worker;";
-        die $@ if $@;
-    }
-}
-
-1;
-
-__END__
 
 =head1 WRITING A PARSER IMPLEMENTATION
 
@@ -695,36 +665,7 @@ docs for the appropriate placing of calls to the callbacks.
 
 =head1 SUPPORT
 
-Support for this module is provided via the datetime@perl.org email
-list. See http://lists.perl.org/ for more details.
-
-Alternatively, log them via the CPAN RT system via the web or email:
-
-    http://perl.dellah.org/rt/dtbuilder
-    bug-datetime-format-builder@rt.cpan.org
-
-This makes it much easier for me to track things and thus means
-your problem is less likely to be neglected.
-
-=head1 THANKS
-
-See L<DateTime::Format::Builder>.
-
-=head1 LICENCE AND COPYRIGHT
-
-Copyright E<copy> Iain Truskett, 2003. All rights reserved.
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.000 or,
-at your option, any later version of Perl 5 you may have available.
-
-The full text of the licences can be found in the F<Artistic> and
-F<COPYING> files included with this module, or in L<perlartistic> and
-L<perlgpl> as supplied with Perl 5.8.1 and later.
-
-=head1 AUTHOR
-
-Iain Truskett <spoon@cpan.org>
+See L<DateTime::Format::Builder> for details.
 
 =head1 SEE ALSO
 
@@ -742,5 +683,26 @@ L<DateTime::Format::Builder::Parser::Quick>,
 L<DateTime::Format::Builder::Parser::Regex>,
 L<DateTime::Format::Builder::Parser::Strptime>.
 
-=cut
+=head1 AUTHORS
 
+=over 4
+
+=item *
+
+Dave Rolsky <autarch@urth.org>
+
+=item *
+
+Iain Truskett
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is Copyright (c) 2013 by Dave Rolsky.
+
+This is free software, licensed under:
+
+  The Artistic License 2.0 (GPL Compatible)
+
+=cut

@@ -1,16 +1,112 @@
 package DateTime::Format::Builder::Parser::generic;
+{
+  $DateTime::Format::Builder::Parser::generic::VERSION = '0.81';
+}
 use strict;
-use vars qw( $VERSION );
+use warnings;
 use Carp;
 use Params::Validate qw(
     validate SCALAR CODEREF UNDEF
 );
 
-$VERSION = '0.77';
+
+
+sub new {
+    my $class = shift;
+    bless {@_}, $class;
+}
+
+
+sub generic_parser {
+    my $class = shift;
+    my %args  = validate(
+        @_,
+        {
+            (
+                map { $_ => { type => CODEREF, optional => 1 } }
+                    qw(
+                    on_match on_fail preprocess postprocess
+                    )
+            ),
+            label => { type => SCALAR | UNDEF, optional => 1 },
+        }
+    );
+    my $label = $args{label};
+
+    my $callback
+        = ( exists $args{on_match} or exists $args{on_fail} ) ? 1 : undef;
+
+    return sub {
+        my ( $self, $date, $p, @args ) = @_;
+        return unless defined $date;
+        my %p;
+        %p = %$p if $p;    # Look! A Copy!
+
+        my %param = (
+            self => $self,
+            ( defined $label ? ( label => $label ) : () ),
+            ( @args          ? ( args  => \@args ) : () ),
+        );
+
+        # Preprocess - can modify $date and fill %p
+        if ( $args{preprocess} ) {
+            $date = $args{preprocess}
+                ->( input => $date, parsed => \%p, %param );
+        }
+
+        my $rv = $class->do_match( $date, @args ) if $class->can('do_match');
+
+        # Funky callback thing
+        if ($callback) {
+            my $type = defined $rv ? "on_match" : "on_fail";
+            $args{$type}->( input => $date, %param ) if $args{$type};
+        }
+        return unless defined $rv;
+
+        my $dt;
+        $dt = $class->post_match( $date, $rv, \%p )
+            if $class->can('post_match');
+
+        # Allow post processing. Return undef if regarded as failure
+        if ( $args{postprocess} ) {
+            my $rv = $args{postprocess}->(
+                parsed => \%p,
+                input  => $date,
+                post   => $dt,
+                %param,
+            );
+            return unless $rv;
+        }
+
+        # A successful match!
+        $dt = $class->make( $date, $dt, \%p ) if $class->can('make');
+        return $dt;
+    };
+}
+
+
+{
+    no strict 'refs';
+    for (qw( valid_params params )) {
+        *$_ = *{"DateTime::Format::Builder::Parser::$_"};
+    }
+}
+
+1;
+
+# ABSTRACT: Useful routines
+
+__END__
+
+=pod
 
 =head1 NAME
 
 DateTime::Format::Builder::Parser::generic - Useful routines
+
+=head1 VERSION
+
+version 0.81
 
 =head1 METHODS
 
@@ -20,14 +116,6 @@ DateTime::Format::Builder::Parser::generic - Useful routines
 
 Standard constructor. Returns a blessed hash; any arguments are placed
 in the hash. This is useful for storing information between methods.
-
-=cut
-
-sub new
-{
-    my $class = shift;
-    bless { @_ }, $class;
-}
 
 =head3 generic_parser
 
@@ -60,70 +148,6 @@ preprocess
 postprocess
 
 =back
-
-=cut
-
-sub generic_parser {
-    my $class = shift;
-    my %args = validate( @_, {
-	    ( map { $_ => { type => CODEREF, optional => 1 } } qw(
-	      on_match on_fail preprocess postprocess
-	    ) ),
-	    label => { type => SCALAR|UNDEF, optional => 1 },
-	});
-    my $label = $args{label};
-
-    my $callback = (exists $args{on_match} or exists $args{on_fail}) ? 1 : undef;
-
-    return sub
-    {
-	my ($self, $date, $p, @args) = @_;
-	return unless defined $date;
-	my %p;
-	%p = %$p if $p; # Look! A Copy!
-
-	my %param = (
-	    self => $self,
-	    ( defined $label ? ( label => $label ) : ()),
-	    (@args ? (args => \@args) : ()),
-	);
-
-	# Preprocess - can modify $date and fill %p
-	if ($args{preprocess})
-	{
-	    $date = $args{preprocess}->( input => $date, parsed => \%p, %param );
-	}
-
-	my $rv = $class->do_match( $date, @args ) if $class->can('do_match');
-
-	# Funky callback thing
-	if ($callback)
-	{
-	    my $type = defined $rv ? "on_match" : "on_fail";
-	    $args{$type}->( input => $date, %param ) if $args{$type};
-	}
-	return unless defined $rv;
-
-	my $dt;
-	$dt = $class->post_match( $date, $rv, \%p ) if $class->can('post_match');
-
-	# Allow post processing. Return undef if regarded as failure
-	if ($args{postprocess})
-	{
-	    my $rv = $args{postprocess}->(
-		parsed => \%p,
-		input => $date,
-		post => $dt,
-		%param,
-	    );
-	    return unless $rv;
-	}
-
-	# A successful match!
-	$dt = $class->make( $date, $dt, \%p ) if $class->can('make');
-	return $dt;
-    };
-}
 
 =head2 Methods for subclassing
 
@@ -165,58 +189,15 @@ Instead we get to type:
     $self->valid_params( blah );
     __PACKAGE__->valid_params( blah );
 
-=cut
-
-{
-    no strict 'refs';
-    for (qw( valid_params params ))
-    {
-	*$_ = *{"DateTime::Format::Builder::Parser::$_"};
-    }
-}
-
-1;
-
-__END__
-
 =head1 WRITING A SUBCLASS
 
 Rather than attempt to explain how it all works, I think it's best if
 you take a look at F<Regex.pm> and F<Strptime.pm> as examples and
 work from there.
 
-=head1 THANKS
-
-See L<DateTime::Format::Builder>.
-
 =head1 SUPPORT
 
-Support for this module is provided via the datetime@perl.org email
-list. See http://lists.perl.org/ for more details.
-
-Alternatively, log them via the CPAN RT system via the web or email:
-
-    http://perl.dellah.org/rt/dtbuilder
-    bug-datetime-format-builder@rt.cpan.org
-
-This makes it much easier for me to track things and thus means
-your problem is less likely to be neglected.
-
-=head1 LICENCE AND COPYRIGHT
-
-Copyright E<copy> Iain Truskett, 2003. All rights reserved.
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.000 or,
-at your option, any later version of Perl 5 you may have available.
-
-The full text of the licences can be found in the F<Artistic> and
-F<COPYING> files included with this module, or in L<perlartistic> and
-L<perlgpl> as supplied with Perl 5.8.1 and later.
-
-=head1 AUTHOR
-
-Iain Truskett <spoon@cpan.org>
+See L<DateTime::Format::Builder> for details.
 
 =head1 SEE ALSO
 
@@ -227,5 +208,26 @@ http://datetime.perl.org/
 L<perl>, L<DateTime>, L<DateTime::Format::Builder>,
 L<DateTime::Format::Builder::Parser>.
 
-=cut
+=head1 AUTHORS
 
+=over 4
+
+=item *
+
+Dave Rolsky <autarch@urth.org>
+
+=item *
+
+Iain Truskett
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is Copyright (c) 2013 by Dave Rolsky.
+
+This is free software, licensed under:
+
+  The Artistic License 2.0 (GPL Compatible)
+
+=cut
